@@ -55,7 +55,7 @@ export async function bridgeInfoEthAddress(ethAddress){
 
 export async function checkAmountBridgedDb() {
   try {
-    const result = await pool.query(`SELECT * FROM bridge WHERE txIdBCH IS NOT NULL;`);
+    const result = await pool.query(`SELECT * FROM bridge WHERE orderId IS NOT NULL;`);
     return result.rows.length;
   } catch (e) {
     console.log(e);
@@ -79,6 +79,24 @@ export async function createOrder(sbchOriginAddress, destinationAddress, signatu
       `INSERT INTO bridgeRequest (sbchOriginAddress, destinationAddress, signatureProof, amountNfts) VALUES('${sbchOriginAddress}', '${destinationAddress}', '${signatureProof}', ${amountNfts}, array[${nftList}]) RETURNING *;`
     );
     return result.rows[0];
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+export async function getAllOrders(){
+  try {
+    const result = await pool.query(`SELECT * FROM bridgeRequest ORDER BY id DESC;`);
+    return result.rows;
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+export async function getRecentOrders(){
+  try {
+    const result = await pool.query(`SELECT * FROM bridgeRequest ORDER BY id DESC LIMIT 20;`);
+    return result.rows;
   } catch (e) {
     console.log(e);
   }

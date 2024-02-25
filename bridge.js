@@ -1,7 +1,7 @@
 import { TestNetWallet, Wallet, TokenMintRequest } from "mainnet-js";
 import { bigIntToVmNumber, binToHex } from '@bitauth/libauth';
 import { ethers } from "ethers";
-import { writeInfoToDb, getAllBridgeInfo, getRecentBridgeInfo, checkAmountBridgedDb, addBridgeInfoToNFT, bridgeInfoEthAddress, createOrder, getOrderById, addPaymentInfoToOrder, addTxIdToOrder, addOrderIdToNft } from "./database.js"
+import { writeInfoToDb, getAllBridgeInfo, getRecentBridgeInfo, checkAmountBridgedDb, addBridgeInfoToNFT, bridgeInfoEthAddress, createOrder, getOrderById, addPaymentInfoToOrder, addTxIdToOrder, addOrderIdToNft, getAllOrders, getRecentOrders } from "./database.js"
 import abi from "./abi.json" assert { type: 'json' }
 import express from "express";
 import cors from "cors";
@@ -14,6 +14,7 @@ const seedphrase = process.env.SEEDPHRASE;
 const serverUrl = process.env.SERVER_URL;
 const contractAddress = process.env.CONTRACTADDR;
 const secretToken = process.env.SECRET_TOKEN;
+const bridgingCost = 0.005
 
 let nftsBridged = 0;
 const amountBridgedDb = await checkAmountBridgedDb();
@@ -52,15 +53,20 @@ app.post('/callback', async(req, res) => {
           const checkOrder = await getOrderById(req.body.payment.id);
           if(checkOrder?.checkOrder) return
 
+          // check if the payment is sufficient
+          const amountbchpaid= req.body.payment.paid_amount_crypto;
+          const listNftNumbers = checkOrder?.nftList;
+          const requiredBchAmount = listNftNumbers.length * bridgingCost;
+          if(amountbchpaid < requiredBchAmount) return
+
           const orderId = req.body.payment.id;
           const paymentObj = {
             prompttxid: req.body.payment.tx_id,
-            amountbchpaid: req.body.payment.paid_amount_crypto,
+            amountbchpaid: amountbchpaid,
             timepaid: req.body.payment.paid
           };
           const newRow = await addPaymentInfoToOrder(orderId, paymentObj);
           console.log(newRow);
-          const listNftNumbers = checkOrder?.nftList;
           const txid = await tryBridging(sbchOriginAddress, destinationAddress, signature, listNftNumbers);
           await addTxIdToOrder(orderId, txid);
           listNftNumbers.forEach(nftNumber => {addOrderIdToNft(nftNumber, orderId)})
@@ -73,6 +79,17 @@ app.post("/signbridging", async (req, res) => {
     const { sbchOriginAddress, destinationAddress, signature, amountNfts, nftList } = req.body;
     const signingAddress = ethers.utils.verifyMessage( destinationAddress , signature );
     if(signingAddress != sbchOriginAddress) return
+    // validate the nftList
+    const infoAddress = await bridgeInfoEthAddress(sbchOriginAddress);
+    const listNftItems = infoAddress.filter(item => !item.timebridged)
+    const listBurnedNfts = listNftItems.map(item => item.nftnumber)
+    let checkSubset = (parentArray, subsetArray) => {
+      return subsetArray.every((el) => {
+          return parentArray.includes(el)
+      })
+  }
+  if(!checkSubset(nftList, listBurnedNfts)) return
+
     const order = await createOrder(sbchOriginAddress, destinationAddress, signature, amountNfts, nftList);
     const orderId = order.id
     if(orderId) res.json({orderId});
@@ -95,6 +112,24 @@ app.get("/recent", async (req, res) => {
   const infoRecentBridged = await getRecentBridgeInfo();
   if (infoRecentBridged) {
     res.json(infoRecentBridged);
+  } else {
+    res.status(404).send();
+  }
+});
+
+app.get("/orders", async (req, res) => {
+  const infoAllOrders = await getAllOrders();
+  if (infoAllOrders) {
+    res.json(infoAllOrders);
+  } else {
+    res.status(404).send();
+  }
+});
+
+app.get("/recentorders", async (req, res) => {
+  const infoRecentOrders = await getRecentOrders();
+  if (infoRecentOrders) {
+    res.json(infoRecentOrders);
   } else {
     res.status(404).send();
   }
