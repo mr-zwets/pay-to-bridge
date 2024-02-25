@@ -83,3 +83,48 @@ export async function createOrder(sbchOriginAddress, destinationAddress, signatu
     console.log(e);
   }
 }
+
+export async function getOrderById(orderId) {
+  try{
+    const result = await pool.query(
+      `SELECT * FROM bridgeRequest WHERE orderId = ${orderId};`
+    );
+    return result.rows[0];
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+export async function addPaymentInfoToOrder(orderId, paymentObj) {
+  try{
+    const {prompttxid, amountbchpaid, timepaid} = paymentObj
+    const result = await pool.query(
+      `UPDATE bridgeRequest SET prompttxid='${prompttxid}', amountbchpaid='${amountbchpaid}', timepaid='${timepaid}' WHERE id=${orderId} RETURNING *;`
+    );
+    return result.rows[0];
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+export async function addTxIdToOrder(orderId, txid) {
+  try{
+    const result = await pool.query(
+      `UPDATE bridgeRequest SET txIdBCH='${txid}' WHERE id=${orderId} RETURNING *;`
+    );
+    return result.rows[0];
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+export async function addOrderIdToNft(nftNumber, orderId) {
+  try{
+    const result = await pool.query(
+      `UPDATE bridge SET orderId='${orderId}' WHERE nftNumber=${nftNumber} RETURNING *;`
+    );
+    return result.rows[0];
+  } catch (e) {
+    console.log(e);
+  }
+}

@@ -1,7 +1,7 @@
 import { TestNetWallet, Wallet, TokenMintRequest } from "mainnet-js";
 import { bigIntToVmNumber, binToHex } from '@bitauth/libauth';
 import { ethers } from "ethers";
-import { writeInfoToDb, getAllBridgeInfo, getRecentBridgeInfo, checkAmountBridgedDb, addBridgeInfoToNFT, bridgeInfoEthAddress, createOrder } from "./database.js"
+import { writeInfoToDb, getAllBridgeInfo, getRecentBridgeInfo, checkAmountBridgedDb, addBridgeInfoToNFT, bridgeInfoEthAddress, createOrder, getOrderById, addPaymentInfoToOrder, addTxIdToOrder, addOrderIdToNft } from "./database.js"
 import abi from "./abi.json" assert { type: 'json' }
 import express from "express";
 import cors from "cors";
@@ -47,6 +47,23 @@ app.post('/callback', async(req, res) => {
   if (req.body.token === secretToken) { // prevent spoofing
       if (req.body.payment.status === "PAID") {
           // Payment complete. Update your database and ship your order.
+          
+          // if callback already processed, return
+          const checkOrder = await getOrderById(req.body.payment.id);
+          if(checkOrder?.checkOrder) return
+
+          const orderId = req.body.payment.id;
+          const paymentObj = {
+            prompttxid: req.body.payment.tx_id,
+            amountbchpaid: req.body.payment.paid_amount_crypto,
+            timepaid: req.body.payment.paid
+          };
+          const newRow = await addPaymentInfoToOrder(orderId, paymentObj);
+          console.log(newRow);
+          const listNftNumbers = checkOrder?.nftList;
+          const txid = await tryBridging(sbchOriginAddress, destinationAddress, signature, listNftNumbers);
+          await addTxIdToOrder(orderId, txid);
+          listNftNumbers.forEach(nftNumber => {addOrderIdToNft(nftNumber, orderId)})
       }
   }
 })
@@ -122,17 +139,14 @@ reapersContract.on("Transfer", (from, to, amount, event) => {
   writeInfoToDb(burnInfo);
 });
 
-async function tryBridging(sbchOriginAddress, destinationAddress, signatureProof){
+async function tryBridging(sbchOriginAddress, destinationAddress, signatureProof, listNftNumbers){
   // if bridging is already happening, wait 2 seconds
   if(bridgingNft) {
     await new Promise(r => setTimeout(r, 2000));
-    return await tryBridging(sbchOriginAddress, destinationAddress, signatureProof);
+    return await tryBridging(sbchOriginAddress, destinationAddress, signatureProof, listNftNumbers);
   } else {
     try{
       bridgingNft = true;
-      const infoAddress = await bridgeInfoEthAddress(sbchOriginAddress);
-      const listNftItems = infoAddress.filter(item => !item.timebridged)
-      const listNftNumbers = listNftItems.map(item => item.nftnumber)
       if(!listNftNumbers.length) throw("empty list!")
       const txid = await bridgeNFTs(listNftNumbers, destinationAddress, signatureProof);
       bridgingNft = false;
