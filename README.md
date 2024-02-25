@@ -1,6 +1,6 @@
-# Reapers Bridge
+# Pay-To-Bridge
 
-One-way bridge for NFTs (ERC721) from SmartBCH (EVM) to CashTokens
+One-way bridge for NFTs (ERC721) from SmartBCH (EVM) to CashTokens, with [prompt.cash](https://prompt.cash/) integration for payments.
 
 ## Outline
 
@@ -10,12 +10,16 @@ The server the re-mint the NFT as CashToken to the provided address
 
 ## Details
 
-A subscription monitors all NFT burns of the reapers contract, and writes them to a postgres database.
+A subscription monitors all NFT burns of an ERC721 contract, and writes them to a postgres database.
 A simple API server exposes the burn & bridging info through several endpoints.
 when a user provides a cashtokens payout address with a proof of burn to the server, the server validates the proof, re-issues the NFT to the provided address and mark the NFTs as bridged in the database.
-The matching front-end code can be found in the repo for the reapers website.
+The matching front-end code can be found in the repo for the Poolside Puffers website.
 
 ## Advantages
+
+### non-custodial payment integration
+
+Able to configure your own xPub in [prompt.cash](https://prompt.cash/) and receive BCH payments directly to your Electron Cash wallet.
 
 ### batch briding
 
@@ -44,7 +48,7 @@ Lastly, /address/:originAddress provides all the minting and burning info with a
 ## Installation
 
 ```bash
-git git@github.com:mr-zwets/reapers-bridge.git
+git git@github.com:mr-zwets/pay-to-bridge.git
 npm install
 ```
 
@@ -59,6 +63,7 @@ NETWORK=""
 TOKENID=""
 CONTRACTADDR=""
 SERVER_URL=""
+SECRET_TOKEN=""
 
 PGHOST=''
 PGUSER=
