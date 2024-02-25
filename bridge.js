@@ -76,9 +76,9 @@ app.post('/callback', async(req, res) => {
 
 app.post("/signbridging", async (req, res) => {
   try{
-    const { sbchOriginAddress, destinationAddress, signature, amountNfts, nftList } = req.body;
+    const { sbchOriginAddress, destinationAddress, signature, nftList } = req.body;
     const signingAddress = ethers.utils.verifyMessage( destinationAddress , signature );
-    if(signingAddress != sbchOriginAddress) return
+    if(signingAddress != sbchOriginAddress) throw("invalid signature to bridge")
     // validate the nftList
     const infoAddress = await bridgeInfoEthAddress(sbchOriginAddress);
     const listNftItems = infoAddress.filter(item => !item.timebridged)
@@ -88,14 +88,14 @@ app.post("/signbridging", async (req, res) => {
           return parentArray.includes(el)
       })
   }
-  if(!checkSubset(nftList, listBurnedNfts)) return
-
+  if(!checkSubset(nftList, listBurnedNfts)) throw("invalid nfts to bridge")
+    const amountNfts = nftList.length;
     const order = await createOrder(sbchOriginAddress, destinationAddress, signature, amountNfts, nftList);
     const orderId = order.id
     if(orderId) res.json({orderId});
     else res.status(404).send();
   } catch(error){
-    error
+    res.status(404).send();
   }
 });
 
@@ -148,13 +148,13 @@ app.get("/address/:originAddress", async (req, res) => {
 let provider = new ethers.providers.JsonRpcProvider('https://smartbch.greyh.at');
 // initilize reapers contract
 const reapersContract = new ethers.Contract(contractAddress, abi, provider);
-
+/*
 // mainnet-js generates m/44'/0'/0'/0/0 by default so have to switch it
 const walletClass = network == "mainnet" ? Wallet : TestNetWallet;
 const wallet = await walletClass.fromSeed(seedphrase, derivationPathAddress);
 console.log(`wallet address: ${wallet.getDepositAddress()}`);
 const balance = await wallet.getBalance();
-console.log(`Bch amount in walletAddress is ${balance.bch}bch or ${balance.sat}sats`);
+console.log(`Bch amount in walletAddress is ${balance.bch}bch or ${balance.sat}sats`);*/
 
 // listen to all reaper transfers
 const burnAddress = "0x000000000000000000000000000000000000dEaD"
