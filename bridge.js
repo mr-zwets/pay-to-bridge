@@ -1,7 +1,7 @@
 import { TestNetWallet, Wallet, TokenMintRequest } from "mainnet-js";
 import { bigIntToVmNumber, binToHex } from '@bitauth/libauth';
 import { ethers } from "ethers";
-import { writeInfoToDb, getAllBridgeInfo, getRecentBridgeInfo, checkAmountBridgedDb, addBridgeInfoToNFT, bridgeInfoEthAddress } from "./database.js"
+import { writeInfoToDb, getAllBridgeInfo, getRecentBridgeInfo, checkAmountBridgedDb, addBridgeInfoToNFT, bridgeInfoEthAddress, createOrder } from "./database.js"
 import abi from "./abi.json" assert { type: 'json' }
 import express from "express";
 import cors from "cors";
@@ -13,6 +13,7 @@ const derivationPathAddress = process.env.DERIVATIONPATH;
 const seedphrase = process.env.SEEDPHRASE;
 const serverUrl = process.env.SERVER_URL;
 const contractAddress = process.env.CONTRACTADDR;
+const secretToken = process.env.SECRET_TOKEN;
 
 let nftsBridged = 0;
 const amountBridgedDb = await checkAmountBridgedDb();
@@ -34,13 +35,30 @@ app.get('/', (req, res) => {
   res.json({nftsBridged});
 })
 
+// process the payment callback we receive from Prompt.Cash
+app.post('/callback', async(req, res) => {
+  // The content type to respond is ignored by Prompt.Cash but you should return HTTP Status Code 200
+  res.contentType("text/plain; charset=UTF-8'");
+  res.send("ok"); // any response is fine (ignored by Prompt.Cash)
+
+  console.log("Received callback", req.body)
+
+  // check if the payment is complete
+  if (req.body.token === secretToken) { // prevent spoofing
+      if (req.body.payment.status === "PAID") {
+          // Payment complete. Update your database and ship your order.
+      }
+  }
+})
+
 app.post("/signbridging", async (req, res) => {
   try{
-    const { sbchOriginAddress, destinationAddress, signature } = req.body;
+    const { sbchOriginAddress, destinationAddress, signature, amountNfts, nftList } = req.body;
     const signingAddress = ethers.utils.verifyMessage( destinationAddress , signature );
     if(signingAddress != sbchOriginAddress) return
-    const txid = await tryBridging(sbchOriginAddress, destinationAddress, signature);
-    if(txid) res.json({txid});
+    const order = await createOrder(sbchOriginAddress, destinationAddress, signature, amountNfts, nftList);
+    const orderId = order.id
+    if(orderId) res.json({orderId});
     else res.status(404).send();
   } catch(error){
     error

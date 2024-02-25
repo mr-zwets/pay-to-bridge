@@ -72,3 +72,14 @@ export async function addBridgeInfoToNFT(nftNumber, infoObj) {
     console.log(e);
   }
 }
+
+export async function createOrder(sbchOriginAddress, destinationAddress, signatureProof, amountNfts, nftList) {
+  try{
+    const result = await pool.query(
+      `INSERT INTO bridgeRequest (sbchOriginAddress, destinationAddress, signatureProof, amountNfts) VALUES('${sbchOriginAddress}', '${destinationAddress}', '${signatureProof}', ${amountNfts}, array[${nftList}]) RETURNING *;`
+    );
+    return result.rows[0];
+  } catch (e) {
+    console.log(e);
+  }
+}

@@ -4,8 +4,17 @@ CREATE TABLE bridge(
   txIdSmartBCH varchar(80),
   sbchOriginAddress varchar(80),
   nftNumber integer,
-  timeBridged varchar(40),
-  txIdBCH varchar(80),
+  orderId integer
+);
+CREATE TABLE bridgeRequest(
+  id SERIAL PRIMARY KEY,
   destinationAddress varchar(80),
-  signatureProof varchar(140)
+  sbchOriginAddress varchar(80),
+  signatureProof varchar(140),
+  amountNfts integer,
+  nftList integer[],
+  promptTxId varchar(20),
+  txIdBCH varchar(80),
+  amountBchPaid varchar(15),
+  timePaid varchar(40)
 );
