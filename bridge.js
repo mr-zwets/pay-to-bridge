@@ -51,11 +51,12 @@ app.post('/callback', async(req, res) => {
           
           // if callback already processed, return
           const checkOrder = await getOrderById(req.body.payment.id);
+          console.log(checkOrder)
           if(checkOrder?.checkOrder) return
 
           // check if the payment is sufficient
           const amountbchpaid= req.body.payment.paid_amount_crypto;
-          const listNftNumbers = checkOrder?.nftList;
+          const listNftNumbers = checkOrder?.nftlist;
           const requiredBchAmount = listNftNumbers.length * bridgingCost;
           if(amountbchpaid < requiredBchAmount) return
 
