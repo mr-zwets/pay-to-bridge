@@ -150,13 +150,13 @@ app.get("/address/:originAddress", async (req, res) => {
 let provider = new ethers.providers.JsonRpcProvider('https://smartbch.greyh.at');
 // initilize puffers contract
 const puffersContract = new ethers.Contract(contractAddress, abi, provider);
-/*
+
 // mainnet-js generates m/44'/0'/0'/0/0 by default so have to switch it
 const walletClass = network == "mainnet" ? Wallet : TestNetWallet;
 const wallet = await walletClass.fromSeed(seedphrase, derivationPathAddress);
 console.log(`wallet address: ${wallet.getDepositAddress()}`);
 const balance = await wallet.getBalance();
-console.log(`Bch amount in walletAddress is ${balance.bch}bch or ${balance.sat}sats`);*/
+console.log(`Bch amount in walletAddress is ${balance.bch}bch or ${balance.sat}sats`);
 
 // listen to all reaper transfers
 const burnAddress = "0x000000000000000000000000000000000000dEaD"
