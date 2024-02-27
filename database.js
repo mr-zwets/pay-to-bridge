@@ -105,7 +105,7 @@ export async function getRecentOrders(){
 export async function getOrderById(orderId) {
   try{
     const result = await pool.query(
-      `SELECT * FROM bridgeRequest WHERE orderId = ${orderId};`
+      `SELECT * FROM bridgeRequest WHERE id = ${orderId};`
     );
     return result.rows[0];
   } catch (e) {
