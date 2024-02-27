@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: reapers-bridge
+  name: puffers-bridge
   namespace: default
 spec:
   ports:
-    - port: 888
+    - port: 889
       targetPort: 3000
   selector:
-    service: reapers-bridge
+    service: puffers-bridge
   type: NodePort

@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: reapers-bridge-postgres
+  name: puffers-bridge-postgres
   namespace: default
 spec:
   ports:
-    - port: 5832
+    - port: 5932
       targetPort: 5432
   selector:
-    service: reapers-bridge-postgres
+    service: puffers-bridge-postgres

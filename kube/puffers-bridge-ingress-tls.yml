@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: reapers-bridge-ingress
+  name: puffers-bridge-ingress
   namespace: default
   annotations:
     kubernetes.io/tls-acme: "true"
@@ -9,21 +9,21 @@ spec:
   ingressClassName: "nginx"
   tls:
   - hosts:
-    - api.reapers.cash
-    secretName: reapers-bridge-tls
+    - puffers.reapers.cash
+    secretName: puffers-bridge-tls
   defaultBackend:
     service:
-      name: reapers-bridge
+      name: puffers-bridge
       port:
-        number: 888
+        number: 889
   rules:
-  - host: api.reapers.cash
+  - host: puffers.reapers.cash
     http:
       paths:
       - path: /
         pathType: ImplementationSpecific
         backend:
           service:
-            name: reapers-bridge
+            name: puffers-bridge
             port:
-              number: 888
+              number: 889

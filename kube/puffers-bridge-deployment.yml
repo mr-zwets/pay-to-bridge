@@ -3,41 +3,46 @@ kind: Deployment
 metadata:
   namespace: default
   labels:
-    service: reapers-bridge
-  name: reapers-bridge
+    service: puffers-bridge
+  name: puffers-bridge
 spec:
   strategy:
     type: Recreate
   replicas: 1
   selector:
     matchLabels:
-      service: reapers-bridge
+      service: puffers-bridge
   template:
     metadata:
       labels:
-        service: reapers-bridge
+        service: puffers-bridge
     spec:
       containers:
       - env:
         - name: PGUSER
           valueFrom:
             secretKeyRef:
-              name: reapers-bridge-postgres
+              name: puffers-bridge-postgres
               key: user
         - name: PGPASSWORD
           valueFrom:
             secretKeyRef:
-              name: reapers-bridge-postgres
+              name: puffers-bridge-postgres
               key: password
         - name: SEEDPHRASE
           valueFrom:
             secretKeyRef:
-              name: reapers-bridge-postgres
+              name: puffers-bridge-postgres
               key: seedphrase
+        - name: SECRET_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: puffers-bridge-postgres
+              key: secrettoken
         - name: PGHOST
-          value: reapers-bridge-postgres
+          value: puffers-bridge-postgres
         - name: PGPORT
-          value: "5832"
+          value: "5932"
         - name: PGDATABASE
           value: "bridge"
         - name: DERIVATIONPATH
@@ -45,14 +50,14 @@ spec:
         - name: NETWORK
           value: "mainnet"
         - name: TOKENID
-          value: "945555908fa8f208b6a6588004037b886f70ab1641bae6720f2862afb7af7983"
+          value: "8ded0441eab6fdb69560b396594861eb38b515bf98353e2b4d7ebdf388ebbec2"
         - name: CONTRACTADDR
-          value: "0x48973dbAC0d46B939CD12A7250eFBA965e8a8cf2"
+          value: "0x88fA0495d5E9C1B178EAc1D76DF9D729e39fD8E8"
         - name: SERVER_URL
-          value: "api.reapers.cash"
-        image: zquestz/reapers-bridge:latest
+          value: "puffers.reapers.cash"
+        image: zquestz/puffers-bridge:latest
         imagePullPolicy: Always
-        name: reapers-bridge
+        name: puffers-bridge
         ports:
         - containerPort: 3000
         resources:
