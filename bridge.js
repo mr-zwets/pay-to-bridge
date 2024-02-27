@@ -53,7 +53,8 @@ app.post('/callback', async(req, res) => {
           const orderId = req.body.payment.tx_id;
           const checkOrder = await getOrderById(orderId);
           console.log(checkOrder)
-          if(checkOrder?.checkOrder) return
+          // return if already registered payment details
+          if(checkOrder?.prompttxid) return
           // get info from order
           const {sbchoriginaddress, destinationaddress, nftlist} = checkOrder;
 
