@@ -163,7 +163,7 @@ reapersContract.on("Transfer", (from, to, amount, event) => {
   const erc721numberHex = event.args[2]?._hex
   const nftNumber = parseInt(erc721numberHex, 16);
   if(to != burnAddress && to !=burnAddress2) return
-  console.log(`${ from } burnt reaper #${nftNumber}`);
+  console.log(`${ from } burnt puffer #${nftNumber}`);
   const timeBurned = new Date().toISOString();
   const burnInfo = {
     timeBurned,
