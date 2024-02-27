@@ -53,6 +53,7 @@ app.post('/callback', async(req, res) => {
           const checkOrder = await getOrderById(req.body.payment.tx_id);
           console.log(checkOrder)
           if(checkOrder?.checkOrder) return
+          const {sbchoriginaddress, destinationaddress, signature} = checkOrder;
 
           // check if the payment is sufficient
           const amountbchpaid= req.body.payment.paid_amount_crypto;
@@ -68,7 +69,7 @@ app.post('/callback', async(req, res) => {
           };
           const newRow = await addPaymentInfoToOrder(orderId, paymentObj);
           console.log(newRow);
-          const txid = await tryBridging(sbchOriginAddress, destinationAddress, signature, listNftNumbers);
+          const txid = await tryBridging(sbchoriginaddress, destinationaddress, signature, listNftNumbers);
           await addTxIdToOrder(orderId, txid);
           listNftNumbers.forEach(nftNumber => {addOrderIdToNft(nftNumber, orderId)})
       }
