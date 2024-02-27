@@ -50,7 +50,7 @@ app.post('/callback', async(req, res) => {
           // Payment complete. Update your database and ship your order.
           
           // if callback already processed, return
-          const checkOrder = await getOrderById(req.body.payment.id);
+          const checkOrder = await getOrderById(req.body.payment.tx_id);
           console.log(checkOrder)
           if(checkOrder?.checkOrder) return
 
@@ -62,7 +62,7 @@ app.post('/callback', async(req, res) => {
 
           const orderId = req.body.payment.id;
           const paymentObj = {
-            prompttxid: req.body.payment.tx_id,
+            prompttxid: req.body.payment.id,
             amountbchpaid: amountbchpaid,
             timepaid: req.body.payment.paid
           };
