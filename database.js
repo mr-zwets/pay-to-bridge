@@ -62,11 +62,10 @@ export async function checkAmountBridgedDb() {
   }
 }
 
-export async function addBridgeInfoToNFT(nftNumber, infoObj) {
+export async function addBridgeInfoToNFT(nftNumber, orderId) {
   try {
-    const { timeBridged, signatureProof, txIdBCH, destinationAddress } = infoObj;
     const result = await pool.query(
-      `UPDATE bridge SET timeBridged='${timeBridged}', signatureProof='${signatureProof}', txIdBCH='${txIdBCH}', destinationAddress='${destinationAddress}' WHERE nftNumber='${nftNumber}' RETURNING *;`
+      `UPDATE bridge SET orderid=${orderId} WHERE nftNumber='${nftNumber}' RETURNING *;`
     );
   } catch (e) {
     console.log(e);

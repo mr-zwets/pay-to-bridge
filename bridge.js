@@ -50,18 +50,18 @@ app.post('/callback', async(req, res) => {
           // Payment complete. Update your database and ship your order.
           
           // if callback already processed, return
-          const checkOrder = await getOrderById(req.body.payment.tx_id);
+          const orderId = req.body.payment.tx_id;
+          const checkOrder = await getOrderById(orderId);
           console.log(checkOrder)
           if(checkOrder?.checkOrder) return
-          const {sbchoriginaddress, destinationaddress, signature} = checkOrder;
+          // get info from order
+          const {sbchoriginaddress, destinationaddress, nftlist} = checkOrder;
 
           // check if the payment is sufficient
           const amountbchpaid= req.body.payment.paid_amount_crypto;
-          const listNftNumbers = checkOrder?.nftlist;
-          const requiredBchAmount = listNftNumbers.length * bridgingCost;
+          const requiredBchAmount = nftlist.length * bridgingCost;
           if(amountbchpaid < requiredBchAmount) return
 
-          const orderId = req.body.payment.id;
           const paymentObj = {
             prompttxid: req.body.payment.id,
             amountbchpaid: amountbchpaid,
@@ -69,9 +69,9 @@ app.post('/callback', async(req, res) => {
           };
           const newRow = await addPaymentInfoToOrder(orderId, paymentObj);
           console.log(newRow);
-          const txid = await tryBridging(sbchoriginaddress, destinationaddress, signature, listNftNumbers);
+          const txid = await tryBridging(sbchoriginaddress, destinationaddress, nftlist, orderId);
           await addTxIdToOrder(orderId, txid);
-          listNftNumbers.forEach(nftNumber => {addOrderIdToNft(nftNumber, orderId)})
+          nftlist.forEach(nftNumber => {addOrderIdToNft(nftNumber, orderId)})
       }
   }
 })
@@ -176,16 +176,16 @@ puffersContract.on("Transfer", (from, to, amount, event) => {
   writeInfoToDb(burnInfo);
 });
 
-async function tryBridging(sbchOriginAddress, destinationAddress, signatureProof, listNftNumbers){
+async function tryBridging(sbchOriginAddress, destinationAddress, listNftNumbers, orderId){
   // if bridging is already happening, wait 2 seconds
   if(bridgingNft) {
     await new Promise(r => setTimeout(r, 2000));
-    return await tryBridging(sbchOriginAddress, destinationAddress, signatureProof, listNftNumbers);
+    return await tryBridging(sbchOriginAddress, destinationAddress, listNftNumbers, orderId);
   } else {
     try{
       bridgingNft = true;
       if(!listNftNumbers.length) throw("empty list!")
-      const txid = await bridgeNFTs(listNftNumbers, destinationAddress, signatureProof);
+      const txid = await bridgeNFTs(listNftNumbers, destinationAddress, orderId);
       bridgingNft = false;
       return txid
     } catch (error) { 
@@ -196,7 +196,7 @@ async function tryBridging(sbchOriginAddress, destinationAddress, signatureProof
   }
 }
 
-async function bridgeNFTs(listNftNumbers, destinationAddress, signatureProof){
+async function bridgeNFTs(listNftNumbers, destinationAddress, orderId){
   try{
     // create bridging transaction
     const mintRequests = [];
@@ -219,13 +219,7 @@ async function bridgeNFTs(listNftNumbers, destinationAddress, signatureProof){
     const timeBridged = new Date().toISOString();
 
     listNftNumbers.forEach(nftNumber => {
-      const bridgeInfo = {
-        timeBridged,
-        signatureProof,
-        txIdBCH: txId,
-        destinationAddress
-      }
-      addBridgeInfoToNFT(nftNumber, bridgeInfo);
+      addBridgeInfoToNFT(nftNumber, orderId);
     })
     return txId
   } catch (error) {
