@@ -84,7 +84,7 @@ app.post("/signbridging", async (req, res) => {
     if(signingAddress != sbchOriginAddress) throw("invalid signature to bridge")
     // validate the nftList
     const infoAddress = await bridgeInfoEthAddress(sbchOriginAddress);
-    const listNftItems = infoAddress.filter(item => !item.timebridged)
+    const listNftItems = infoAddress.filter(item => !item.orderid)
     const listBurnedNfts = listNftItems.map(item => item.nftnumber)
     let checkSubset = (parentArray, subsetArray) => {
       return subsetArray.every((el) => {
@@ -94,10 +94,15 @@ app.post("/signbridging", async (req, res) => {
   if(!checkSubset(nftList, listBurnedNfts)) throw("invalid nfts to bridge")
     const amountNfts = nftList.length;
     const order = await createOrder(sbchOriginAddress, destinationAddress, signature, amountNfts, nftList);
+    console.log(order)
     const orderId = order.id
     if(orderId) res.json({orderId});
-    else res.status(404).send();
+    else{
+      console.log(error);
+      res.status(404).send();
+    }
   } catch(error){
+    console.log(error)
     res.status(404).send();
   }
 });
