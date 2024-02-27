@@ -146,8 +146,8 @@ app.get("/address/:originAddress", async (req, res) => {
 
 // initialize SBCH network provider
 let provider = new ethers.providers.JsonRpcProvider('https://smartbch.greyh.at');
-// initilize reapers contract
-const reapersContract = new ethers.Contract(contractAddress, abi, provider);
+// initilize puffers contract
+const puffersContract = new ethers.Contract(contractAddress, abi, provider);
 /*
 // mainnet-js generates m/44'/0'/0'/0/0 by default so have to switch it
 const walletClass = network == "mainnet" ? Wallet : TestNetWallet;
@@ -159,7 +159,7 @@ console.log(`Bch amount in walletAddress is ${balance.bch}bch or ${balance.sat}s
 // listen to all reaper transfers
 const burnAddress = "0x000000000000000000000000000000000000dEaD"
 const burnAddress2 = "0x0000000000000000000000000000000000000000"
-reapersContract.on("Transfer", (from, to, amount, event) => {
+puffersContract.on("Transfer", (from, to, amount, event) => {
   const erc721numberHex = event.args[2]?._hex
   const nftNumber = parseInt(erc721numberHex, 16);
   if(to != burnAddress && to !=burnAddress2) return
