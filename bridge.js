@@ -39,41 +39,44 @@ app.get('/', (req, res) => {
 // process the payment callback we receive from Prompt.Cash
 app.post('/callback', async(req, res) => {
   // The content type to respond is ignored by Prompt.Cash but you should return HTTP Status Code 200
-  res.contentType("text/plain; charset=UTF-8'");
+  res.contentType("text/plain; charset=UTF-8");
   res.send("ok"); // any response is fine (ignored by Prompt.Cash)
 
   console.log("Received callback", req.body)
 
   // check if the payment is complete
   if (req.body.token === secretToken) { // prevent spoofing
-      if (req.body.payment.status === "PAID") {
-          // Payment complete. Update your database and ship your order.
-          
-          // if callback already processed, return
-          const orderId = req.body.payment.tx_id;
-          const checkOrder = await getOrderById(orderId);
-          console.log(checkOrder)
-          // return if already registered payment details
-          if(checkOrder?.prompttxid) return
-          // get info from order
-          const {sbchoriginaddress, destinationaddress, nftlist} = checkOrder;
+    if (req.body.payment.status === "PAID") {
+    // Payment complete. Update your database and ship your order.
+      try{
+        // if callback already processed, return
+        const orderId = req.body.payment.tx_id;
+        const checkOrder = await getOrderById(orderId);
+        console.log(checkOrder)
+        // return if already registered payment details
+        if(checkOrder?.prompttxid) throw new Error("already registered payment details for order")
+        // get info from order
+        const {sbchoriginaddress, destinationaddress, nftlist} = checkOrder;
 
-          // check if the payment is sufficient
-          const amountbchpaid= req.body.payment.paid_amount_crypto;
-          const requiredBchAmount = nftlist.length * bridgingCost;
-          if(amountbchpaid < requiredBchAmount) return
+        // check if the payment is sufficient
+        const amountbchpaid= req.body.payment.paid_amount_crypto;
+        const requiredBchAmount = nftlist.length * bridgingCost;
+        if(amountbchpaid < requiredBchAmount) throw new Error("Insufficient payment")
 
-          const paymentObj = {
-            prompttxid: req.body.payment.id,
-            amountbchpaid: amountbchpaid,
-            timepaid: req.body.payment.paid
-          };
-          const newRow = await addPaymentInfoToOrder(orderId, paymentObj);
-          console.log(newRow);
-          const txid = await tryBridging(sbchoriginaddress, destinationaddress, nftlist, orderId);
-          await addTxIdToOrder(orderId, txid);
-          nftlist.forEach(nftNumber => {addOrderIdToNft(nftNumber, orderId)})
+        const paymentObj = {
+          prompttxid: req.body.payment.id,
+          amountbchpaid: amountbchpaid,
+          timepaid: req.body.payment.paid
+        };
+        const newRow = await addPaymentInfoToOrder(orderId, paymentObj);
+        console.log(newRow);
+        const txid = await tryBridging(sbchoriginaddress, destinationaddress, nftlist, orderId);
+        await addTxIdToOrder(orderId, txid);
+        nftlist.forEach(nftNumber => {addOrderIdToNft(nftNumber, orderId)});
+      } catch(error){
+        console.error(error)    
       }
+    }
   }
 })
 
